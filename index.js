@@ -25,15 +25,21 @@ app.post('/register', async (req, resp) => {
 });
 
 app.post('/login', async (req, resp) => {
-    let user = await User.findOne(req.body).select('-password');
-    // console.log(req.body);
-    if (user) {
-        resp.send(user);
+    if (req.body.password && req.body.email) {
+        let user = await User.findOne(req.body).select('-password');
+        if (user) {
+            resp.send(user);
+        } else {
+            resp.send({
+                result: "No user found!!!"
+            })
+        }
     } else {
         resp.send({
             result: "No user found!!!"
         })
     }
+
 })
 
 app.listen(5000);
