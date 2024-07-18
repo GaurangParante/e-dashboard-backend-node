@@ -52,13 +52,13 @@ app.post('/login', async (req, resp) => {
     }
 });
 
-app.post('/add-product', async (req, resp) => {
+app.post('/add-product', varifyToken, async (req, resp) => {
     let product = new Product(req.body);
     let result = await product.save();
     resp.send(result);
 });
 
-app.get('/products', async (req, resp) => {
+app.get('/products', varifyToken, async (req, resp) => {
     let products = await Product.find();
     if (products.length > 0) {
         resp.send(products);
@@ -67,12 +67,12 @@ app.get('/products', async (req, resp) => {
     }
 });
 
-app.delete('/product/:id', async (req, resp) => {
+app.delete('/product/:id', varifyToken, async (req, resp) => {
     let result = await Product.deleteOne({ _id: req.params.id });
     resp.send(result);
 });
 
-app.get('/product/:id', async (req, resp) => {
+app.get('/product/:id', varifyToken, async (req, resp) => {
     let result = await Product.findOne({ _id: req.params.id });
     if (result) {
         resp.send(result)
@@ -81,7 +81,7 @@ app.get('/product/:id', async (req, resp) => {
     }
 });
 
-app.put('/product/:id', async (req, resp) => {
+app.put('/product/:id', varifyToken, async (req, resp) => {
     let result = await Product.updateOne(
         { _id: req.params.id },
         {
@@ -91,7 +91,7 @@ app.put('/product/:id', async (req, resp) => {
     resp.send(result);
 });
 
-app.get('/search/:key', async (req, resp) => {
+app.get('/search/:key', varifyToken, async (req, resp) => {
     let result = await Product.find({
         $or: [
             { name: { $regex: req.params.key } },
@@ -101,6 +101,22 @@ app.get('/search/:key', async (req, resp) => {
         ]
     });
     resp.send(result)
-})
+});
+
+function varifyToken(req, resp, next) {
+    let token = req.headers['authorization'];
+    if (token) {
+        token = token.split(' ')[1];
+        JWT.verify(token, jwtKey, (err, valid) => {
+            if (err) {
+                resp.status(401).send({ result: "please provide valid token in header..!" })
+            } else {
+                next();
+            }
+        })
+    } else {
+        resp.status(403).send({ result: "please send token in header..!" })
+    }
+}
 
 app.listen(5000);
